@@ -93,12 +93,14 @@ functions:
       - httpApi:
           path: /save
           method: post
+          cors: true
   fetchPhotos:
     handler: functions/fetchPhotos.handler
     events:
       - httpApi:
           path: /photos
           method: get
+          cors: true
    
 
 plugins: 
