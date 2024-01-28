@@ -1,4 +1,4 @@
-org: timour275
+#org: timour275
 app: pictureapp
 service: pictureanalys
 frameworkVersion: '3'

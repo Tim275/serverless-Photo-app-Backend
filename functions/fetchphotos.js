@@ -11,6 +11,6 @@ module.exports.handler = async (event) => { // response to te client
     statusCode: 200,
     body: JSON.stringify({
         result,
-    }),  // Convert results to a JSON string
+    }),  // Convert results to a JSON stringdddddddd
     };  
 }
