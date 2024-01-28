@@ -1,0 +1,105 @@
+org: timour275
+app: pictureapp
+service: pictureanalys
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: eu-central-1
+  timeout: 30
+  environment:
+    BUCKET_NAME: ${self:service}-public-photos-${sls:stage} ## unique for me
+    THUMBMAIL_BUCKET_NAME: ${self:service}-public-thumbs-${sls:stage} ## unique for me
+    PHOTOS_TABLE: ${self:service}-photos-${sls:stage}  ## unique for me
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action: "s3:*"
+          Resource: 
+            - arn:aws:s3:::${self:service}-public-photos-${sls:stage}/*
+            - arn:aws:s3:::${self:service}-public-photos-${sls:stage}
+        - Effect: Allow
+          Action: "rekognition:DetectLabels"
+          Resource: "*" ## all resources
+        - Effect: Allow
+          Action: "dynamodb:*"
+          Resource: "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.PHOTOS_TABLE}"  # This line is correct
+## schritt 2, add permissions for recog
+resources:
+  Resources:
+    PhotosTable:  # Rename this
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-photos-${sls:stage}  # Changed this line
+        AttributeDefinitions:
+          - AttributeName: primary_key
+            AttributeType: S
+        KeySchema:
+          - AttributeName: primary_key
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+
+    MyS3Bucket: 
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:service}-public-photos-${sls:stage}
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
+    MyBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref MyS3Bucket
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Sid: PublicReadForGetBucketObjects
+              Effect: Allow
+              Principal: '*'
+              Action: s3:GetObject
+              Resource: !Sub 'arn:aws:s3:::${MyS3Bucket}/*'
+        
+    ThumbsBucket: 
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:service}-public-thumbs-${sls:stage}
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
+    ThumbsBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref ThumbsBucket
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Sid: PublicReadForGetBucketObjects
+              Effect: Allow
+              Principal: '*'
+              Action: s3:GetObject
+              Resource: !Sub 'arn:aws:s3:::${ThumbsBucket}/*'
+functions:
+  savePhoto:
+    handler: functions/savePhoto.handler
+    events:
+      - httpApi:
+          path: /save
+          method: post
+  fetchPhotos:
+    handler: functions/fetchPhotos.handler
+    events:
+      - httpApi:
+          path: /photos
+          method: get
+   
+
+plugins: 
+  - serverless-offline
