@@ -8,6 +8,9 @@ provider:
   runtime: nodejs18.x
   region: eu-central-1
   timeout: 30
+  httpApi:
+    cors: true
+    
   environment:
     BUCKET_NAME: ${self:service}-public-photos-${sls:stage} ## unique for me
     THUMBMAIL_BUCKET_NAME: ${self:service}-public-thumbs-${sls:stage} ## unique for me
@@ -93,14 +96,13 @@ functions:
       - httpApi:
           path: /save
           method: post
-          cors: true
   fetchPhotos:
     handler: functions/fetchPhotos.handler
     events:
       - httpApi:
           path: /photos
           method: get
-          cors: true
+          
    
 
 plugins: 

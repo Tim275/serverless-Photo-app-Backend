@@ -1,14 +1,14 @@
 const AWS = require("aws-sdk");
 const parser = require("lambda-multipart-parser");  // npm install lambda-multipart-parser
 const { v4: uuidv4 } = require('uuid'); // npm install uuid
-const sharp = require("sharp"); // if the image is to large, (reduce lamda cost !)
+//const sharp = require("sharp"); // if the image is to large, (reduce lamda cost !)
+
+const sendResponse = require("../utils/sendResponse"); // send response to the client
+const {s3, rekognition, dynamoDb,cognito} = require("../const/providers"); // import the providers
+
 
 const width = 600;
 
-
-const s3 =  new AWS.S3();
-const rekognition = new AWS.Rekognition();
-const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
 
 async function saveFile(file){
@@ -62,14 +62,16 @@ await dynamoDb.put({
   
 }
 
-module.exports.handler = async (event) => { // response to te client
-  const { files } = await parser.parse(event);
-  const filesData = files.map(saveFile);  
-  const results = await Promise.all(filesData); 
-  
-  return {
-    statusCode: 200,
-    body: JSON.stringify
-    (results),  // Convert results to a JSON string
-      };
-    }
+
+module.exports.handler = async (event) => { // response to the client
+ 
+  try {
+    const { files } = await parser.parse(event);
+    const filesData = files.map(saveFile);  
+    const results = await Promise.all(filesData); 
+
+    return sendResponse(200, results);
+  } catch (error) {
+    return sendResponse(400, error);
+  }
+}
