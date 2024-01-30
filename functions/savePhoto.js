@@ -7,22 +7,20 @@ const sendResponse = require("../utils/sendResponse"); // send response to the c
 const {s3, rekognition, dynamoDb,cognito} = require("../const/providers"); // import the providers
 
 
-const width = 600;
+//const width = 600;
 
 
 
 async function saveFile(file){
    
   const BucketName = process.env.BUCKET_NAME;  // gesetzt in der yaml
-  
   const ThumbmailBucket = process.env.THUMBMAIL_BUCKET_NAME; // gesetzt in der yaml
   const thumbmail = await sharp(file.content).resize(width).toBuffer(); // if the image is to large, (reduce lamda cost !)
 
-  
+
   console.log({file});
   console.log({BucketName});  //test
 
-  
   
    await s3
   .putObject({
@@ -32,6 +30,7 @@ async function saveFile(file){
   })
   .promise(); // rekognition part
 
+  
   const {Labels} = await rekognition
   .detectLabels({
     Image: {

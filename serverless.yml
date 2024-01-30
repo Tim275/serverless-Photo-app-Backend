@@ -10,11 +10,12 @@ provider:
   timeout: 30
   httpApi:
     cors: true
-    
+    ## BUCKET_NAME
   environment:
-    BUCKET_NAME: ${self:service}-public-photos-${sls:stage} ## unique for me
-    THUMBMAIL_BUCKET_NAME: ${self:service}-public-thumbs-${sls:stage} ## unique for me
+    ORIGINAL_BUCKET_NAME: ${self:service}-public-photos-${sls:stage} ## unique for me
+    THUMBNAIL_BUCKET_NAME: ${self:service}-public-thumbs-${sls:stage} ## unique for me
     PHOTOS_TABLE: ${self:service}-photos-${sls:stage}  ## unique for me
+    
   iam:
     role:
       statements:
@@ -89,6 +90,9 @@ resources:
               Principal: '*'
               Action: s3:GetObject
               Resource: !Sub 'arn:aws:s3:::${ThumbsBucket}/*'
+
+
+
 functions:
   savePhoto:
     handler: functions/savePhoto.handler
@@ -102,7 +106,18 @@ functions:
       - httpApi:
           path: /photos
           method: get
-          
+  updatePhoto:
+    handler: functions/updatePhoto.handler
+    events:
+      - httpApi:
+          path: /update
+          method: post
+  deletePhoto:
+    handler: functions/deletePhoto.handler
+    events:
+      - httpApi:
+          path: /delete
+          method: delete
    
 
 plugins: 
